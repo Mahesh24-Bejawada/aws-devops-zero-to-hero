@@ -1,20 +1,24 @@
-# Use the official Python image as the base image
-FROM python:3.9
+# Stage 1: Build stage
+FROM python:3.9-slim AS builder
 
-# Set the working directory in the container
 WORKDIR /app
 
-# Copy the Python dependencies file to the container
+# Copy requirements and install dependencies
 COPY requirements.txt .
-
-# Install the Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the Flask application code to the container
+# Copy the app source code
 COPY app.py .
 
-# Expose the port the Flask application will run on
+# Stage 2: Final runtime stage
+FROM python:3.9-slim
+
+WORKDIR /app
+
+# Copy only installed python packages from builder stage
+COPY --from=builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
+COPY --from=builder /app/app.py .
+
 EXPOSE 3000
 
-# Command to run the Flask application when the container starts
 CMD ["python", "app.py"]
